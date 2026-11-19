@@ -148,7 +148,7 @@
           const tarjeta = document.createElement("article");
           tarjeta.className = "punto";
           const titulo = document.createElement("h3");
-          titulo.textContent = "Administración " + String(p.administracion || "").replace(/^0+/, "");
+          titulo.textContent = "Administración: " + String(p.administracion || "").slice(-2);
           tarjeta.appendChild(titulo);
           const lineas = [
             ["Receptor", p.receptor],
