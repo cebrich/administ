@@ -3,183 +3,196 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123b67">
+  <meta name="theme-color" content="#0b56a8">
   <title>Buscador de décimos</title>
   <style>
-    :root { color-scheme: light; --azul:#123b67; --azul2:#1d5b91; --fondo:#f2f6fa; --texto:#172536; }
-    * { box-sizing:border-box; }
-    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--fondo); color:var(--texto); }
-    header { background:linear-gradient(130deg,var(--azul),var(--azul2)); color:white; padding:30px 18px 34px; }
-    .cabecera { max-width:850px; margin:auto; }
-    h1 { margin:0 0 7px; font-size:clamp(1.7rem,5vw,2.25rem); }
-    header p { margin:0; opacity:.9; }
-    main { max-width:850px; margin:22px auto; padding:0 14px 40px; }
-    .panel { background:white; border-radius:16px; padding:20px; box-shadow:0 5px 22px #17324d12; }
-    label { display:block; font-weight:650; margin:0 0 7px; }
-    select,input { width:100%; min-height:48px; border:1px solid #cbd5df; border-radius:10px; padding:10px 12px; font:inherit; background:white; color:var(--texto); }
-    .campo { margin-bottom:17px; }
-    button { width:100%; min-height:50px; border:0; border-radius:10px; background:var(--azul); color:white; font:700 1rem inherit; font-size:1rem; cursor:pointer; }
-    button:disabled { opacity:.6; cursor:wait; }
-    .ayuda { color:#607184; font-size:.9rem; margin:7px 0 0; }
-    #estado { margin:15px 0 0; font-weight:600; }
-    .resultado { margin-top:16px; display:grid; gap:12px; }
-    .punto { border:1px solid #e0e7ee; border-radius:12px; padding:15px; }
-    .punto h3 { margin:0 0 9px; color:var(--azul); font-size:1.05rem; }
-    .punto p { margin:5px 0; line-height:1.4; overflow-wrap:anywhere; }
-    .contador { color:#526477; font-weight:600; }
-    .vacio { padding:16px; background:#f7f9fb; border-radius:10px; }
-    footer { text-align:center; color:#718093; font-size:.82rem; padding:0 15px 25px; }
-    @media(min-width:650px) { .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .campo { margin-bottom:12px; } }
+    :root { color-scheme: light; --azul:#0b56a8; --azul-osc:#123b67; --claro:#dbeafe; --texto:#1e293b; --gris:#64748b; --rojo:#c62828; }
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { height:100%; }
+    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:var(--texto); overflow:hidden;
+           background: radial-gradient(1200px 700px at 85% -10%, #e5ecfb 0, transparent 60%), radial-gradient(900px 600px at -10% 110%, #e9e4f7 0, transparent 55%), #f6f8fd; }
+    button { font:inherit; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
+    button:active { transform:scale(.95); }
+    .app { height:100%; display:flex; flex-direction:column; align-items:center; padding:8px 10px 10px; gap:8px; }
+    .titulo { background:var(--azul); color:#fff; font-weight:800; font-size:clamp(12px,1.8vh,16px); padding:7px 26px; border-radius:999px; box-shadow:0 3px 10px #0b56a844; text-align:center; }
+    /* espera */
+    #espera { flex:1; width:100%; display:flex; align-items:center; justify-content:center; text-align:center; padding:20px; }
+    .espera-int { max-width:720px; }
+    .reloj { display:inline-block; font-size:clamp(40px,8vh,72px); animation:giro 1.4s linear infinite; }
+    @keyframes giro { to { transform:rotate(360deg); } }
+    .espera-t { color:var(--azul); font-weight:800; font-size:clamp(18px,3.2vh,30px); }
+    .espera-s { color:var(--gris); font-weight:600; font-size:clamp(12px,1.9vh,17px); margin-top:6px; }
+    .error .espera-t { color:var(--rojo); }
+    .reint { margin-top:16px; padding:12px 34px; border-radius:999px; background:var(--azul); color:#fff; font-weight:800; font-size:clamp(14px,2vh,19px); }
+    /* contenido */
+    #contenido { flex:1; min-height:0; width:100%; max-width:1400px; display:none; flex-direction:column; gap:8px; }
+    #sorteos { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+    .chip { border-radius:999px; padding:8px 18px; font-weight:800; font-size:clamp(12px,1.8vh,16px); background:#fff; color:var(--azul); border:2px solid var(--azul); }
+    .chip.on { background:var(--azul); color:#fff; }
+    .cuerpo { flex:1; min-height:0; display:flex; gap:16px; }
+    .izq { flex:0 0 clamp(250px,26vw,400px); display:flex; flex-direction:column; gap:10px; }
+    #num { height:clamp(64px,10vh,96px); border-radius:16px; background:#fff; border:3px solid var(--azul); display:flex; align-items:center; justify-content:center;
+           font-family:Consolas,"Courier New",monospace; font-weight:800; font-size:clamp(32px,5.6vh,54px); letter-spacing:.3em; padding-left:.3em; color:var(--azul); }
+    .teclas { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .tecla { height:clamp(58px,9vh,92px); border-radius:16px; background:#fff; border:2px solid var(--azul); color:var(--azul); font-weight:800; font-size:clamp(24px,3.8vh,36px); box-shadow:0 3px 8px #0b56a826; }
+    .tecla.peq { font-size:clamp(14px,2vh,20px); }
+    .ayuda { text-align:center; font-size:clamp(11px,1.6vh,15px); font-weight:700; color:#475569; }
+    .der { flex:1; min-width:0; display:flex; flex-direction:column; background:#ffffffeb; border-radius:16px; box-shadow:0 6px 20px #281e5a2e; overflow:hidden; }
+    #cab { padding:10px 16px; font-weight:800; color:var(--azul); border-bottom:2px solid var(--claro); font-size:clamp(14px,2.1vh,20px); min-height:44px; }
+    #cab b { font-family:Consolas,monospace; letter-spacing:.1em; color:var(--rojo); }
+    #res { flex:1; min-height:0; overflow-y:auto; padding:12px 14px; -webkit-overflow-scrolling:touch; }
+    .msg { height:100%; display:flex; flex-direction:column; gap:8px; align-items:center; justify-content:center; text-align:center; font-weight:700; font-size:clamp(14px,2.3vh,22px); padding:20px; color:var(--gris); }
+    .msg small { font-size:.7em; font-weight:600; color:var(--gris); }
+    .msg.mal { color:var(--rojo); }
+    .msg.bien { color:var(--azul); }
+    .rejilla { display:grid; grid-template-columns:repeat(auto-fill,minmax(clamp(260px,28vw,420px),1fr)); gap:12px; }
+    .punto { border-radius:16px; background:linear-gradient(#fff,#eff6ff); border:2px solid #bfdbfe; box-shadow:0 3px 10px #0b56a81f; overflow:hidden; }
+    .punto header { display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--azul); color:#fff; font-weight:800; font-size:clamp(14px,2vh,20px); }
+    .punto header .adm { background:#fff; color:var(--azul); border-radius:999px; padding:2px 12px; white-space:nowrap; }
+    .punto header .rec { flex:1; min-width:0; line-height:1.15; }
+    .punto .datos { padding:10px 14px; display:flex; flex-direction:column; gap:5px; font-weight:600; font-size:clamp(13px,1.9vh,17px); line-height:1.3; overflow-wrap:anywhere; }
+    .punto .linea { display:flex; gap:8px; align-items:baseline; }
+    .punto .linea i { font-style:normal; flex:0 0 22px; }
+    .series { margin-top:4px; padding:6px 10px; border-radius:10px; background:var(--claro); color:var(--azul); font-weight:800; }
+    /* móvil / pantalla estrecha: teclado arriba, resultados debajo */
+    @media (max-width:760px) {
+      body { overflow:auto; } .app { height:auto; min-height:100%; }
+      .cuerpo { flex-direction:column; } .izq { flex:none; } .der { min-height:300px; } #res { max-height:none; }
+    }
   </style>
 </head>
 <body>
-<header>
-  <div class="cabecera">
-    <h1>Buscador de décimos</h1>
-    <p>Consulta dónde se encuentra disponible un número de Lotería Nacional.</p>
-  </div>
-</header>
-<main>
-  <section class="panel">
-    <form id="formulario">
-      <div class="form-grid">
-        <div class="campo">
-          <label for="sorteo">Sorteo</label>
-          <select id="sorteo" required>
-            <option value="">Cargando sorteos...</option>
-          </select>
-        </div>
-        <div class="campo">
-          <label for="numero">Número de 5 cifras</label>
-          <input id="numero" type="text" inputmode="numeric" autocomplete="off"
-                 maxlength="5" pattern="[0-9]{5}" placeholder="Ej. 23451" required>
-          <p class="ayuda">Introduce también los ceros iniciales si los tiene.</p>
-        </div>
+<div class="app">
+  <div class="titulo">Buscador de Décimos · ¿Dónde está mi número?</div>
+
+  <!-- Hasta que no llegan los sorteos solo se ve esta pantalla de espera -->
+  <div id="espera"></div>
+
+  <div id="contenido">
+    <div id="sorteos"></div>
+    <div class="cuerpo">
+      <div class="izq">
+        <div id="num"></div>
+        <div class="teclas" id="teclas"></div>
+        <div class="ayuda">Escribe las 5 cifras del número (con ceros iniciales)</div>
       </div>
-      <button id="buscar" type="submit">Buscar número</button>
-    </form>
-    <div id="estado" role="status" aria-live="polite"></div>
-    <div id="resultados" class="resultado"></div>
-  </section>
-</main>
-<footer>Buscador independiente. Los datos de disponibilidad proceden de SELAE.</footer>
+      <div class="der">
+        <div id="cab"></div>
+        <div id="res"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script>
   // IMPORTANTE: sustituir esta dirección por la URL HTTPS que muestre Cloudflare
   // cuando el túnel esté arrancado. No añadir una barra al final.
   const API_BASE = "https://effectiveness-showtimes-gossip-level.trycloudflare.com";
 
-  const sorteo = document.getElementById("sorteo");
-  const numero = document.getElementById("numero");
-  const boton = document.getElementById("buscar");
-  const estado = document.getElementById("estado");
-  const resultados = document.getElementById("resultados");
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
+  const S = { sorteos:null, drawId:null, q:"", res:null, cargando:false, err:"", intento:0, seq:0 };
+  const MAX_INTENTOS = 6;
 
-  function comprobarConfiguracion() {
-    return !API_BASE.includes("PEGA-AQUI");
+  function configurado() { return !API_BASE.includes("PEGA-AQUI"); }
+
+  async function pedir(url, opciones) {
+    const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 45000);
+    try { return await fetch(url, { ...opciones, signal: ctl.signal }); } finally { clearTimeout(t); }
+  }
+  function textoError(e) {
+    if (e.name === "AbortError") return "el servidor tardó demasiado en responder";
+    if (e.message === "Failed to fetch") return "el servidor no responde (¿túnel apagado o dirección antigua?)";
+    return e.message;
   }
 
+  /* ---------- carga de sorteos: primero los datos, luego todo el contenido ---------- */
   async function cargarSorteos() {
-    if (!comprobarConfiguracion()) {
-      sorteo.innerHTML = '<option value="">API pendiente de configurar</option>';
-      estado.textContent = "La web está preparada. Falta conectar la dirección del servidor Cloudflare.";
-      return;
-    }
-    try {
-      const r = await fetch(API_BASE + "/api/sorteos");
-      if (!r.ok) throw new Error("HTTP " + r.status);
-      const datos = await r.json();
-      sorteo.innerHTML = "";
-      for (const s of datos.sorteos || []) {
-        const op = document.createElement("option");
-        op.value = s.drawId;
-        op.textContent = s.nombre;
-        sorteo.appendChild(op);
+    if (S.cargando) return;
+    S.cargando = true; S.err = "";
+    if (!configurado()) { S.err = "falta configurar la dirección del servidor Cloudflare"; S.cargando = false; return pintar(); }
+    for (let n = 1; n <= MAX_INTENTOS && !S.sorteos; n++) {
+      S.intento = n; pintar();
+      try {
+        const r = await pedir(API_BASE + "/api/sorteos");
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        const lista = (await r.json()).sorteos || [];
+        if (!lista.length) throw new Error("SELAE no devolvió sorteos");
+        S.sorteos = lista; S.drawId = String(lista[0].drawId); S.err = "";
+      } catch (e) {
+        S.err = textoError(e);
+        if (n < MAX_INTENTOS) await new Promise((ok) => setTimeout(ok, 4000));
       }
-      if (!sorteo.options.length) throw new Error("SELAE no devolvió sorteos.");
-      estado.textContent = "";
-    } catch (e) {
-      sorteo.innerHTML = '<option value="">No se pudieron cargar los sorteos</option>';
-      estado.textContent = "Error de conexión: " + e.message;
     }
+    S.cargando = false; pintar();
   }
 
-  document.getElementById("formulario").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    resultados.innerHTML = "";
-    const n = numero.value.trim();
-    if (!/^[0-9]{5}$/.test(n)) {
-      estado.textContent = "Introduce exactamente 5 cifras.";
-      return;
-    }
-    if (!comprobarConfiguracion()) {
-      estado.textContent = "Todavía falta configurar la conexión con Cloudflare.";
-      return;
-    }
-    if (!sorteo.value) {
-      estado.textContent = "Selecciona un sorteo.";
-      return;
-    }
+  /* ---------- teclado ---------- */
+  function tecla(k) { if (S.q.length < 5) { S.q += k; S.res = null; S.err = ""; pintar(); if (S.q.length === 5) buscar(); } }
+  function borrarUna() { S.q = S.q.slice(0, -1); S.res = null; S.err = ""; pintar(); }
+  function borrarTodo() { S.q = ""; S.res = null; S.err = ""; pintar(); }
+  function elegir(id) { S.drawId = String(id); S.res = null; S.err = ""; pintar(); if (S.q.length === 5) buscar(); }
 
-    boton.disabled = true;
-    estado.textContent = "Consultando puntos de venta...";
+  /* ---------- consulta ---------- */
+  async function buscar() {
+    if (S.q.length !== 5 || !S.drawId) return;
+    const mi = ++S.seq, numero = S.q, drawId = S.drawId;
+    S.cargando = "consulta"; S.err = ""; S.res = null; pintar();
     try {
-      const r = await fetch(API_BASE + "/api/consulta", {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({drawId:sorteo.value, numero:n})
+      const r = await pedir(API_BASE + "/api/consulta", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ drawId, numero })
       });
       const datos = await r.json();
       if (!r.ok) throw new Error(datos.detail || ("HTTP " + r.status));
+      if (mi === S.seq) S.res = datos;
+    } catch (e) { if (mi === S.seq) S.err = "No se pudo completar la consulta: " + textoError(e); }
+    if (mi === S.seq) { S.cargando = false; pintar(); }
+  }
 
-      estado.textContent = "";
-      const cuenta = document.createElement("p");
-      cuenta.className = "contador";
-      cuenta.textContent = "Puntos de venta encontrados: " + datos.total;
-      resultados.appendChild(cuenta);
+  /* ---------- pintado ---------- */
+  function linea(ico, v) { return v !== undefined && v !== null && String(v) !== "" ? `<div class="linea"><i>${ico}</i><span>${esc(v)}</span></div>` : ""; }
 
-      if (!datos.puntos || !datos.puntos.length) {
-        const vacio = document.createElement("div");
-        vacio.className = "vacio";
-        vacio.textContent = "No se han encontrado puntos de venta para este número y sorteo.";
-        resultados.appendChild(vacio);
-      } else {
-        datos.puntos.forEach((p) => {
-          const tarjeta = document.createElement("article");
-          tarjeta.className = "punto";
-          const titulo = document.createElement("h3");
-          titulo.textContent = "Administración: " + String(p.administracion || "").slice(-2);
-          tarjeta.appendChild(titulo);
-          const lineas = [
-            ["Receptor", p.receptor],
-            ["Dirección", p.direccion],
-            ["Código postal", p.cp],
-            ["Población", p.poblacion],
-            ["Provincia", p.provincia],
-            ["Teléfono", p.telefono],
-            ["Series", p.numSeries],
-            ["Lista de series", p.lista_series]
-          ];
-          lineas.forEach(([etiqueta, valor]) => {
-            if (valor !== undefined && valor !== null && String(valor) !== "") {
-              const ptag = document.createElement("p");
-              const strong = document.createElement("strong");
-              strong.textContent = etiqueta + ": ";
-              ptag.appendChild(strong);
-              ptag.appendChild(document.createTextNode(String(valor)));
-              tarjeta.appendChild(ptag);
-            }
-          });
-          resultados.appendChild(tarjeta);
-        });
-      }
-    } catch (e) {
-      estado.textContent = "No se pudo completar la consulta: " + e.message;
-    } finally {
-      boton.disabled = false;
+  function pintar() {
+    const listo = !!S.sorteos;
+    $("contenido").style.display = listo ? "flex" : "none";
+    $("espera").style.display = listo ? "none" : "flex";
+    if (!listo) {
+      $("espera").innerHTML = S.cargando
+        ? `<div class="espera-int"><div class="reloj">⏳</div><div class="espera-t">Cargando sorteos…</div><div class="espera-s">Intento ${S.intento || 1} de ${MAX_INTENTOS}${S.err ? " · " + esc(S.err) : ""}</div></div>`
+        : `<div class="espera-int error"><div class="espera-t">No se pudo conectar con el servidor</div><div class="espera-s">${esc(S.err || "Sin conexión")}</div><button class="reint" onclick="cargarSorteos()">Reintentar</button></div>`;
+      return;
     }
-  });
+    $("sorteos").innerHTML = S.sorteos.map((s) =>
+      `<button class="chip${String(s.drawId) === S.drawId ? " on" : ""}" onclick="elegir('${esc(s.drawId)}')">${esc(String(s.nombre).replace(/^Sorteo\s+(Extraordinario\s+)?(del?\s+)?/i, ""))}</button>`).join("");
+    $("num").textContent = S.q.padEnd(5, "·");
 
+    const cab = $("cab"), res = $("res");
+    const msg = (t, clase = "", sub = "") => { res.innerHTML = `<div class="msg ${clase}">${t}${sub ? `<small>${sub}</small>` : ""}</div>`; };
+    if (S.cargando === "consulta") { cab.textContent = "Número " + S.q; return msg("Consultando puntos de venta…", "bien"); }
+    if (S.err) { cab.textContent = S.q ? "Número " + S.q : ""; return msg(esc(S.err), "mal", "Cambia de sorteo o vuelve a escribir el número para reintentar"); }
+    if (S.q.length < 5) { cab.textContent = ""; return msg("Escribe un número de 5 cifras", "", "Te diremos en qué administraciones está disponible"); }
+    if (!S.res) { cab.textContent = ""; return; }
+
+    const pts = S.res.puntos || [], total = S.res.total != null ? S.res.total : pts.length;
+    cab.innerHTML = `🎯 Número <b>${esc(S.q)}</b> · ` + (pts.length ? `disponible en ${esc(total)} ${+total === 1 ? "punto de venta" : "puntos de venta"}` : "sin puntos de venta");
+    if (!pts.length) return msg("😕 No hay puntos de venta con este número en este sorteo", "mal", "Prueba con otro número o con otro sorteo");
+    res.innerHTML = `<div class="rejilla">${pts.map((p) => {
+      const ciudad = [p.cp, p.poblacion].filter(Boolean).join(" ") + (p.provincia ? " (" + p.provincia + ")" : "");
+      const hayS = p.numSeries !== undefined && p.numSeries !== null && String(p.numSeries) !== "";
+      return `<article class="punto"><header><span class="adm">Admón. ${esc(String(p.administracion || "").slice(-2))}</span><span class="rec">${esc(p.receptor || "")}</span></header>
+        <div class="datos">${linea("📍", p.direccion)}${linea("🏙️", ciudad)}${linea("📞", p.telefono)}
+        ${hayS ? `<div class="series">🎟️ ${esc(p.numSeries)} ${+p.numSeries === 1 ? "serie" : "series"}${p.lista_series ? ": " + esc(p.lista_series) : ""}</div>` : ""}</div></article>`;
+    }).join("")}</div>`;
+    res.scrollTop = 0;
+  }
+
+  $("teclas").innerHTML = ["1","2","3","4","5","6","7","8","9"].map((k) => `<button class="tecla" onclick="tecla('${k}')">${k}</button>`).join("")
+    + `<button class="tecla peq" onclick="borrarTodo()">Borrar</button><button class="tecla" onclick="tecla('0')">0</button><button class="tecla" onclick="borrarUna()" aria-label="Borrar una cifra">⌫</button>`;
+  // También se puede escribir con un teclado físico
+  document.addEventListener("keydown", (e) => { if (!S.sorteos) return; if (/^\d$/.test(e.key)) tecla(e.key); else if (e.key === "Backspace") borrarUna(); else if (e.key === "Escape") borrarTodo(); });
+
+  pintar();
   cargarSorteos();
 </script>
 </body>
