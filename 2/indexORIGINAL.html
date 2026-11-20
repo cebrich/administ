@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123b67">
+  <title>Buscador de décimos</title>
+  <style>
+    :root { color-scheme: light; --azul:#123b67; --azul2:#1d5b91; --fondo:#f2f6fa; --texto:#172536; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; background:var(--fondo); color:var(--texto); }
+    header { background:linear-gradient(130deg,var(--azul),var(--azul2)); color:white; padding:30px 18px 34px; }
+    .cabecera { max-width:850px; margin:auto; }
+    h1 { margin:0 0 7px; font-size:clamp(1.7rem,5vw,2.25rem); }
+    header p { margin:0; opacity:.9; }
+    main { max-width:850px; margin:22px auto; padding:0 14px 40px; }
+    .panel { background:white; border-radius:16px; padding:20px; box-shadow:0 5px 22px #17324d12; }
+    label { display:block; font-weight:650; margin:0 0 7px; }
+    select,input { width:100%; min-height:48px; border:1px solid #cbd5df; border-radius:10px; padding:10px 12px; font:inherit; background:white; color:var(--texto); }
+    .campo { margin-bottom:17px; }
+    button { width:100%; min-height:50px; border:0; border-radius:10px; background:var(--azul); color:white; font:700 1rem inherit; font-size:1rem; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:wait; }
+    .ayuda { color:#607184; font-size:.9rem; margin:7px 0 0; }
+    #estado { margin:15px 0 0; font-weight:600; }
+    .resultado { margin-top:16px; display:grid; gap:12px; }
+    .punto { border:1px solid #e0e7ee; border-radius:12px; padding:15px; }
+    .punto h3 { margin:0 0 9px; color:var(--azul); font-size:1.05rem; }
+    .punto p { margin:5px 0; line-height:1.4; overflow-wrap:anywhere; }
+    .contador { color:#526477; font-weight:600; }
+    .vacio { padding:16px; background:#f7f9fb; border-radius:10px; }
+    footer { text-align:center; color:#718093; font-size:.82rem; padding:0 15px 25px; }
+    @media(min-width:650px) { .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; } .campo { margin-bottom:12px; } }
+  </style>
+</head>
+<body>
+<header>
+  <div class="cabecera">
+    <h1>Buscador de décimos</h1>
+    <p>Consulta dónde se encuentra disponible un número de Lotería Nacional.</p>
+  </div>
+</header>
+<main>
+  <section class="panel">
+    <form id="formulario">
+      <div class="form-grid">
+        <div class="campo">
+          <label for="sorteo">Sorteo</label>
+          <select id="sorteo" required>
+            <option value="">Cargando sorteos...</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label for="numero">Número de 5 cifras</label>
+          <input id="numero" type="text" inputmode="numeric" autocomplete="off"
+                 maxlength="5" pattern="[0-9]{5}" placeholder="Ej. 23451" required>
+          <p class="ayuda">Introduce también los ceros iniciales si los tiene.</p>
+        </div>
+      </div>
+      <button id="buscar" type="submit">Buscar número</button>
+    </form>
+    <div id="estado" role="status" aria-live="polite"></div>
+    <div id="resultados" class="resultado"></div>
+  </section>
+</main>
+<footer>Buscador independiente. Los datos de disponibilidad proceden de SELAE.</footer>
+
+<script>
+  // IMPORTANTE: sustituir esta dirección por la URL HTTPS que muestre Cloudflare
+  // cuando el túnel esté arrancado. No añadir una barra al final.
+  const API_BASE = "https://effectiveness-showtimes-gossip-level.trycloudflare.com";
+
+  const sorteo = document.getElementById("sorteo");
+  const numero = document.getElementById("numero");
+  const boton = document.getElementById("buscar");
+  const estado = document.getElementById("estado");
+  const resultados = document.getElementById("resultados");
+
+  function comprobarConfiguracion() {
+    return !API_BASE.includes("PEGA-AQUI");
+  }
+
+  async function cargarSorteos() {
+    if (!comprobarConfiguracion()) {
+      sorteo.innerHTML = '<option value="">API pendiente de configurar</option>';
+      estado.textContent = "La web está preparada. Falta conectar la dirección del servidor Cloudflare.";
+      return;
+    }
+    try {
+      const r = await fetch(API_BASE + "/api/sorteos");
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const datos = await r.json();
+      sorteo.innerHTML = "";
+      for (const s of datos.sorteos || []) {
+        const op = document.createElement("option");
+        op.value = s.drawId;
+        op.textContent = s.nombre;
+        sorteo.appendChild(op);
+      }
+      if (!sorteo.options.length) throw new Error("SELAE no devolvió sorteos.");
+      estado.textContent = "";
+    } catch (e) {
+      sorteo.innerHTML = '<option value="">No se pudieron cargar los sorteos</option>';
+      estado.textContent = "Error de conexión: " + e.message;
+    }
+  }
+
+  document.getElementById("formulario").addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    resultados.innerHTML = "";
+    const n = numero.value.trim();
+    if (!/^[0-9]{5}$/.test(n)) {
+      estado.textContent = "Introduce exactamente 5 cifras.";
+      return;
+    }
+    if (!comprobarConfiguracion()) {
+      estado.textContent = "Todavía falta configurar la conexión con Cloudflare.";
+      return;
+    }
+    if (!sorteo.value) {
+      estado.textContent = "Selecciona un sorteo.";
+      return;
+    }
+
+    boton.disabled = true;
+    estado.textContent = "Consultando puntos de venta...";
+    try {
+      const r = await fetch(API_BASE + "/api/consulta", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({drawId:sorteo.value, numero:n})
+      });
+      const datos = await r.json();
+      if (!r.ok) throw new Error(datos.detail || ("HTTP " + r.status));
+
+      estado.textContent = "";
+      const cuenta = document.createElement("p");
+      cuenta.className = "contador";
+      cuenta.textContent = "Puntos de venta encontrados: " + datos.total;
+      resultados.appendChild(cuenta);
+
+      if (!datos.puntos || !datos.puntos.length) {
+        const vacio = document.createElement("div");
+        vacio.className = "vacio";
+        vacio.textContent = "No se han encontrado puntos de venta para este número y sorteo.";
+        resultados.appendChild(vacio);
+      } else {
+        datos.puntos.forEach((p) => {
+          const tarjeta = document.createElement("article");
+          tarjeta.className = "punto";
+          const titulo = document.createElement("h3");
+          titulo.textContent = "Administración: " + String(p.administracion || "").slice(-2);
+          tarjeta.appendChild(titulo);
+          const lineas = [
+            ["Receptor", p.receptor],
+            ["Dirección", p.direccion],
+            ["Código postal", p.cp],
+            ["Población", p.poblacion],
+            ["Provincia", p.provincia],
+            ["Teléfono", p.telefono],
+            ["Series", p.numSeries],
+            ["Lista de series", p.lista_series]
+          ];
+          lineas.forEach(([etiqueta, valor]) => {
+            if (valor !== undefined && valor !== null && String(valor) !== "") {
+              const ptag = document.createElement("p");
+              const strong = document.createElement("strong");
+              strong.textContent = etiqueta + ": ";
+              ptag.appendChild(strong);
+              ptag.appendChild(document.createTextNode(String(valor)));
+              tarjeta.appendChild(ptag);
+            }
+          });
+          resultados.appendChild(tarjeta);
+        });
+      }
+    } catch (e) {
+      estado.textContent = "No se pudo completar la consulta: " + e.message;
+    } finally {
+      boton.disabled = false;
+    }
+  });
+
+  cargarSorteos();
+</script>
+</body>
+</html>
