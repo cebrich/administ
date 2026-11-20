@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b56a8">
   <title>Buscador de décimos</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     :root { color-scheme: light; --azul:#0b56a8; --azul-osc:#123b67; --claro:#dbeafe; --texto:#1e293b; --gris:#64748b; --rojo:#c62828; }
     * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
     html, body { height:100%; }
-    body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:var(--texto); overflow:hidden;
+    body { margin:0; font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif; color:var(--texto); overflow:hidden;
            background: radial-gradient(1200px 700px at 85% -10%, #e5ecfb 0, transparent 60%), radial-gradient(900px 600px at -10% 110%, #e9e4f7 0, transparent 55%), #f6f8fd; }
     button { font:inherit; border:0; cursor:pointer; touch-action:manipulation; user-select:none; -webkit-user-select:none; }
     button:active { transform:scale(.95); }
@@ -32,7 +33,7 @@
     .cuerpo { flex:1; min-height:0; display:flex; gap:16px; }
     .izq { flex:0 0 clamp(250px,26vw,400px); display:flex; flex-direction:column; gap:10px; }
     #num { height:clamp(64px,10vh,96px); border-radius:16px; background:#fff; border:3px solid var(--azul); display:flex; align-items:center; justify-content:center;
-           font-family:Consolas,"Courier New",monospace; font-weight:800; font-size:clamp(32px,5.6vh,54px); letter-spacing:.3em; padding-left:.3em; color:var(--azul); }
+           font-family:Consolas,monospace; font-weight:800; font-size:clamp(30px,5vh,48px); letter-spacing:.25em; color:var(--azul); }
     .teclas { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
     .tecla { height:clamp(58px,9vh,92px); border-radius:16px; background:#fff; border:2px solid var(--azul); color:var(--azul); font-weight:800; font-size:clamp(24px,3.8vh,36px); box-shadow:0 3px 8px #0b56a826; }
     .tecla.peq { font-size:clamp(14px,2vh,20px); }
@@ -52,7 +53,11 @@
     .punto header .rec { flex:1; min-width:0; line-height:1.15; }
     .punto .datos { padding:10px 14px; display:flex; flex-direction:column; gap:5px; font-weight:600; font-size:clamp(13px,1.9vh,17px); line-height:1.3; overflow-wrap:anywhere; }
     .punto .linea { display:flex; gap:8px; align-items:baseline; }
-    .punto .linea i { font-style:normal; flex:0 0 22px; }
+    .punto .linea { align-items:center; }
+    .ico { flex:0 0 20px; width:20px; height:20px; fill:none; stroke:#475569; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+    .punto .rcod { font-family:Consolas,monospace; font-weight:800; letter-spacing:.06em; background:#ffffff26; border:1px solid #ffffff66; border-radius:8px; padding:1px 8px; white-space:nowrap; }
+    .series .ico { stroke:var(--azul); vertical-align:-4px; margin-right:6px; }
+    .series { display:flex; align-items:center; }
     .series { margin-top:4px; padding:6px 10px; border-radius:10px; background:var(--claro); color:var(--azul); font-weight:800; }
     /* móvil / pantalla estrecha: teclado arriba, resultados debajo */
     @media (max-width:760px) {
@@ -102,8 +107,16 @@
   }
   function textoError(e) {
     if (e.name === "AbortError") return "el servidor tardó demasiado en responder";
-    if (e.message === "Failed to fetch") return "el servidor no responde (¿túnel apagado o dirección antigua?)";
+    if (e.message === "Failed to fetch") return "el servidor no responde";
     return e.message;
+  }
+
+  // Sorteo preseleccionado: del 23 de dic. al 7 de ene. El Niño; el resto del año Navidad (si está en la lista); si no, el primero
+  function sorteoPredeterminado(lista) {
+    const h = new Date(), md = (h.getMonth() + 1) * 100 + h.getDate();
+    const nino = md >= 1223 || md <= 107;
+    const buscado = lista.find((x) => (nino ? /ni[ñn]o/i : /navidad/i).test(x.nombre));
+    return String((buscado || lista[0]).drawId);
   }
 
   /* ---------- carga de sorteos: primero los datos, luego todo el contenido ---------- */
@@ -116,9 +129,11 @@
       try {
         const r = await pedir(API_BASE + "/api/sorteos");
         if (!r.ok) throw new Error("HTTP " + r.status);
-        const lista = (await r.json()).sorteos || [];
+        const todos = (await r.json()).sorteos || [];
+        const extra = (x) => /navidad|ni[ñn]o/i.test(x.nombre);
+        const lista = todos.filter((x, i) => i < 4 || extra(x));   // 4 primeros + Navidad y El Niño si están
         if (!lista.length) throw new Error("SELAE no devolvió sorteos");
-        S.sorteos = lista; S.drawId = String(lista[0].drawId); S.err = "";
+        S.sorteos = lista; S.drawId = sorteoPredeterminado(lista); S.err = "";
       } catch (e) {
         S.err = textoError(e);
         if (n < MAX_INTENTOS) await new Promise((ok) => setTimeout(ok, 4000));
@@ -151,7 +166,15 @@
   }
 
   /* ---------- pintado ---------- */
-  function linea(ico, v) { return v !== undefined && v !== null && String(v) !== "" ? `<div class="linea"><i>${ico}</i><span>${esc(v)}</span></div>` : ""; }
+  const ICO = {
+    pin:   '<svg class="ico" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+    city:  '<svg class="ico" viewBox="0 0 24 24"><path d="M4 21V9l6-3v15M10 21V4l10 4v13M2 21h20M7 12h0M7 16h0M14 11h2M14 15h2"/></svg>',
+    tel:   '<svg class="ico" viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
+    tick:  '<svg class="ico" viewBox="0 0 24 24"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><path d="M14 6v12" stroke-dasharray="2 2"/></svg>'
+  };
+  function linea(ico, v) { return v !== undefined && v !== null && String(v) !== "" ? `<div class="linea">${ICO[ico]}<span>${esc(v)}</span></div>` : ""; }
+  // Código de receptor: "R" pegado a 5 cifras (si trae 4, se completa con un 0 por delante)
+  function codigoR(v) { const t = String(v == null ? "" : v).trim(); return /^\d{1,5}$/.test(t) ? "R" + t.padStart(5, "0") : t; }
 
   function pintar() {
     const listo = !!S.sorteos;
@@ -175,14 +198,14 @@
     if (!S.res) { cab.textContent = ""; return; }
 
     const pts = S.res.puntos || [], total = S.res.total != null ? S.res.total : pts.length;
-    cab.innerHTML = `🎯 Número <b>${esc(S.q)}</b> · ` + (pts.length ? `disponible en ${esc(total)} ${+total === 1 ? "punto de venta" : "puntos de venta"}` : "sin puntos de venta");
-    if (!pts.length) return msg("😕 No hay puntos de venta con este número en este sorteo", "mal", "Prueba con otro número o con otro sorteo");
+    cab.innerHTML = `Número <b>${esc(S.q)}</b> · ` + (pts.length ? `disponible en ${esc(total)} ${+total === 1 ? "punto de venta" : "puntos de venta"}` : "sin puntos de venta");
+    if (!pts.length) return msg("No hay puntos de venta con este número en este sorteo", "mal", "Prueba con otro número o con otro sorteo");
     res.innerHTML = `<div class="rejilla">${pts.map((p) => {
       const ciudad = [p.cp, p.poblacion].filter(Boolean).join(" ") + (p.provincia ? " (" + p.provincia + ")" : "");
       const hayS = p.numSeries !== undefined && p.numSeries !== null && String(p.numSeries) !== "";
-      return `<article class="punto"><header><span class="adm">Admón. ${esc(String(p.administracion || "").slice(-2))}</span><span class="rec">${esc(p.receptor || "")}</span></header>
-        <div class="datos">${linea("📍", p.direccion)}${linea("🏙️", ciudad)}${linea("📞", p.telefono)}
-        ${hayS ? `<div class="series">🎟️ ${esc(p.numSeries)} ${+p.numSeries === 1 ? "serie" : "series"}${p.lista_series ? ": " + esc(p.lista_series) : ""}</div>` : ""}</div></article>`;
+      return `<article class="punto"><header><span class="adm">Admón. ${esc(String(p.administracion || "").slice(-2))}</span><span class="rec">${p.receptor ? `<span class="rcod">${esc(codigoR(p.receptor))}</span>` : ""}</span></header>
+        <div class="datos">${linea("pin", p.direccion)}${linea("city", ciudad)}${linea("tel", p.telefono)}
+        ${hayS ? `<div class="series">${ICO.tick}${esc(p.numSeries)} ${+p.numSeries === 1 ? "serie" : "series"}${p.lista_series ? ": " + esc(p.lista_series) : ""}</div>` : ""}</div></article>`;
     }).join("")}</div>`;
     res.scrollTop = 0;
   }
