@@ -147,7 +147,9 @@
 
   /* ---------- imagen del décimo del sorteo elegido ----------
      https://www.loteriasyapuestas.es/f/loterias/imagenes/estaticos/capillas/s<nº sorteo>_<año>_pc.jpg
-     El nº de sorteo son las 3 últimas cifras del drawId (…102 -> s102). El año no viene en la API: se prueba el actual, el siguiente y el anterior. */
+     drawId = <contador><09><nº de sorteo de 3 cifras>  (p. ej. 13324 09 102). El nº son las 3 últimas cifras (…102 -> s102).
+     El contador avanza 1 por día: contador 13284 = 12/11/2026 (mismo cálculo que update_draws.py). De ahí sale la fecha del sorteo y su AÑO,
+     que es necesario porque cada año repite números (El Niño de 2027 es s1_2027; s1_2026 es el del año anterior). */
   const IMG_DECIMO = "https://www.loteriasyapuestas.es/f/loterias/imagenes/estaticos/capillas/";
   const imgOk = {};   // drawId -> url que funcionó
   function pintarDecimo() {
@@ -157,8 +159,10 @@
     img.dataset.draw = S.drawId;
     const num = parseInt(String(S.drawId).slice(-3), 10);
     if (!num) { box.style.display = "none"; return; }
-    const y = new Date().getFullYear();
-    const urls = imgOk[S.drawId] ? [imgOk[S.drawId]] : [y, y + 1, y - 1].map((a) => `${IMG_DECIMO}s${num}_${a}_pc.jpg`);
+    const contador = parseInt(String(S.drawId).slice(0, -5), 10);
+    if (!contador) { box.style.display = "none"; return; }
+    const anio = new Date(Date.UTC(2026, 10, 12) + (contador - 13284) * 86400000).getUTCFullYear();
+    const urls = [`${IMG_DECIMO}s${num}_${anio}_pc.jpg`];
     const id = S.drawId; let i = 0;
     box.style.display = "none";
     img.onload = () => { if (img.dataset.draw === id) { imgOk[id] = img.src; box.style.display = "flex"; } };
